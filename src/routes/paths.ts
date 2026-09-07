@@ -1,0 +1,18 @@
+export const paths = {
+  home: '/',
+  aziende: {
+    list: '/aziende',
+    detail: (aziendaId: string) => `/aziende/${aziendaId}`,
+    persone: {
+      list: (aziendaId: string) => `/aziende/${aziendaId}/persone`,
+      detail: (aziendaId: string, personaId: string) =>
+        `/aziende/${aziendaId}/persone/${personaId}`,
+      certificati: {
+        list: (aziendaId: string, personaId: string) =>
+          `/aziende/${aziendaId}/persone/${personaId}/certificati`,
+        detail: (aziendaId: string, personaId: string, certificatoId: string) =>
+          `/aziende/${aziendaId}/persone/${personaId}/certificati/${certificatoId}`,
+      },
+    },
+  },
+} as const
