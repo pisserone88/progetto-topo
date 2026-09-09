@@ -9,13 +9,23 @@ type AppLayoutProps = {
 
 export function AppLayout({ title }: AppLayoutProps) {
   const location = useLocation()
-  // Sidebar impostata di default a chiusa (false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const isActive = (path: string) => location.pathname === path
+  // Funzione di controllo attivo corretta e isolata per ogni voce
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/'
+    }
+    if (path === paths.settori.list) {
+      // Diventa attivo solo se siamo dentro /settori (ma NON nella root /)
+      return location.pathname.startsWith('/settori')
+    }
+    // Per tutte le altre rotte (es. /aziende)
+    return location.pathname === path || location.pathname.startsWith(path + '/')
+  }
+  
   const linkClassName = (path: string) => isActive(path) ? 'active' : ''
 
-  // Funzione per chiudere la sidebar automaticamente su mobile al click di un link
   const handleLinkClick = () => {
     if (window.innerWidth <= 768) {
       setSidebarOpen(false)
@@ -31,7 +41,6 @@ export function AppLayout({ title }: AppLayoutProps) {
             <h3>Gestione Aziende</h3>
             <p className="muted" style={{ margin: 0 }}>Controllo Scadenze</p>
           </div>
-          {/* Pulsante "X" per chiudere la sidebar dall'interno */}
           <button 
             onClick={() => setSidebarOpen(false)} 
             className="close-sidebar-btn"
@@ -45,8 +54,11 @@ export function AppLayout({ title }: AppLayoutProps) {
           <Link to="/" className={linkClassName('/')} onClick={handleLinkClick}>
             📊 Dashboard
           </Link>
+          <Link to={paths.settori.list} className={linkClassName(paths.settori.list)} onClick={handleLinkClick}>
+            📁 Settori
+          </Link>
           <Link to={paths.aziende.list} className={linkClassName(paths.aziende.list)} onClick={handleLinkClick}>
-            🏢 Aziende
+            🏢 Tutte le Aziende
           </Link>
         </nav>
 
@@ -59,7 +71,6 @@ export function AppLayout({ title }: AppLayoutProps) {
       <div className="app-content-area">
         <header className="app-header">
           <div className="app-header__left">
-            {/* Pulsante Hamburger visibile solo quando la sidebar è chiusa */}
             {!sidebarOpen && (
               <button 
                 onClick={() => setSidebarOpen(true)} 

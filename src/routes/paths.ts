@@ -1,5 +1,9 @@
 export const paths = {
   home: '/',
+  settori: {
+    list: '/settori',
+    detail: (settoreId: string) => `/settori/${settoreId}/aziende`,
+  },
   aziende: {
     list: '/aziende',
     detail: (aziendaId: string) => `/aziende/${aziendaId}`,

@@ -42,6 +42,14 @@ export function AziendaDetailPage() {
   const [editingDataNascita, setEditingDataNascita] = useState('')
   const [editingLuogoNascita, setEditingLuogoNascita] = useState('')
 
+
+  const formattaData = (dataString?: string | null) => {
+    if (!dataString) return ''
+    const [anno, mese, giorno] = dataString.split('-')
+    if (!anno || !mese || !giorno) return dataString
+    return `${giorno}-${mese}-${anno}`
+  }
+
   const fetchPersoneData = async () => {
     if (!aziendaId) return
     setLoading(true)
@@ -372,7 +380,7 @@ export function AziendaDetailPage() {
                         </div>
                         <span className="muted" style={{ fontSize: '0.85rem' }}>
                           {persona.codice_fiscale && `CF: ${persona.codice_fiscale}`}
-                          {persona.data_nascita && ` | Nato/a il: ${persona.data_nascita}`}
+                          {persona.data_nascita && ` | Nato/a il: ${formattaData(persona.data_nascita)}`}
                           {persona.luogo_nascita && ` a ${persona.luogo_nascita}`}
                         </span>
                       </Link>

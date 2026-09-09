@@ -20,6 +20,14 @@ interface CertificatoUrgente {
   } | null
 }
 
+// Funzione rapida per convertire da AAAA-MM-GG a GG/MM/AAAA
+const formatDataItaliana = (dataString: string | null) => {
+  if (!dataString) return ''
+  const [anno, mese, giorno] = dataString.split('-')
+  if (!anno || !mese || !giorno) return dataString
+  return `${giorno}/${mese}/${anno}`
+}
+
 export function DashboardPage() {
   const [totali, setTotali] = useState({
     aziende: 0,
@@ -153,7 +161,7 @@ export function DashboardPage() {
                       borderRadius: '4px',
                       whiteSpace: 'nowrap' 
                     }}>
-                      Scad. {cert.data_scadenza}
+                      Scad. {formatDataItaliana(cert.data_scadenza)}
                     </span>
                   </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { paths } from '../../routes/paths'
 import { supabase } from '../../lib/supabase/client'
@@ -13,17 +13,29 @@ interface PersonaConCertificati {
   certificati?: CertificatoScadenza[]
 }
 
+interface Settore {
+  id: string
+  nome: string
+}
+
 interface Azienda {
   id: string
   nome: string
   codice_fiscale?: string | null
   p_iva?: string | null
   ateco?: string | null
+  settore_id?: number | null
+  settori?: Settore | null
   persone?: PersonaConCertificati[]
 }
 
 export function AziendeListPage() {
+  const { settoreId } = useParams<{ settoreId?: string }>()
+  
   const [aziende, setAziende] = useState<Azienda[]>([])
+  const [settoriDisponibili, setSettoriDisponibili] = useState<Settore[]>([])
+  const [nomeSettoreCorrente, setNomeSettoreCorrente] = useState<string>('')
+  
   const [loading, setLoading] = useState(true)
   const [soloAlert, setSoloAlert] = useState(false)
   const [ricercaTesto, setRicercaTesto] = useState('')
@@ -33,16 +45,30 @@ export function AziendeListPage() {
   const [nuovoCf, setNuovoCf] = useState('')
   const [nuovoPIva, setNuovoPIva] = useState('')
   const [nuovoAteco, setNuovoAteco] = useState('')
+  const [nuovoSettoreId, setNuovoSettoreId] = useState<string>(settoreId || '')
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingNome, setEditingNome] = useState('')
   const [editingCf, setEditingCf] = useState('')
   const [editingPIva, setEditingPIva] = useState('')
   const [editingAteco, setEditingAteco] = useState('')
+  const [editingSettoreId, setEditingSettoreId] = useState<string>('')
 
-  const fetchAziende = async () => {
+  const fetchDati = async () => {
     setLoading(true)
-    const { data, error } = await supabase
+
+    // Recupera la lista di tutti i settori per i select del form
+    const { data: settoriData } = await supabase.from('settori').select('id, nome').order('nome')
+    if (settoriData) {
+      setSettoriDisponibili(settoriData.map(s => ({ id: String(s.id), nome: s.nome })))
+      if (settoreId) {
+        const corrente = settoriData.find(s => String(s.id) === settoreId)
+        if (corrente) setNomeSettoreCorrente(corrente.nome)
+      }
+    }
+
+    // Costruisci la query delle aziende
+    let query = supabase
       .from('aziende')
       .select(`
         id,
@@ -50,23 +76,32 @@ export function AziendeListPage() {
         codice_fiscale,
         p_iva,
         ateco,
+        settore_id,
+        settori ( id, nome ),
         persone (
           certificati (
             data_scadenza
           )
         )
       `)
-      .order('nome', { ascending: true })
+
+    if (settoreId) {
+      query = query.eq('settore_id', settoreId)
+    }
+
+    const { data, error } = await query.order('nome', { ascending: true })
 
     if (error) {
       console.error('Errore nel recupero delle aziende:', error)
     } else {
-      const formattedData = (data || []).map((item) => ({
+      const formattedData = (data || []).map((item: any) => ({
         id: String(item.id),
         nome: item.nome,
         codice_fiscale: item.codice_fiscale,
         p_iva: item.p_iva,
         ateco: item.ateco,
+        settore_id: item.settore_id,
+        settori: item.settori,
         persone: item.persone || [],
       }))
       setAziende(formattedData)
@@ -75,8 +110,11 @@ export function AziendeListPage() {
   }
 
   useEffect(() => {
-    fetchAziende()
-  }, [])
+    fetchDati()
+    if (settoreId) {
+      setNuovoSettoreId(settoreId)
+    }
+  }, [settoreId])
 
   const handleAddAzienda = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,6 +128,7 @@ export function AziendeListPage() {
           codice_fiscale: nuovoCf.trim() || null,
           p_iva: nuovoPIva.trim() || null,
           ateco: nuovoAteco.trim() || null,
+          settore_id: nuovoSettoreId ? Number(nuovoSettoreId) : (settoreId ? Number(settoreId) : null),
         },
       ])
 
@@ -101,7 +140,7 @@ export function AziendeListPage() {
       setNuovoPIva('')
       setNuovoAteco('')
       setMostraFormAggiungi(false)
-      fetchAziende()
+      fetchDati()
     }
   }
 
@@ -115,6 +154,7 @@ export function AziendeListPage() {
         codice_fiscale: editingCf.trim() || null,
         p_iva: editingPIva.trim() || null,
         ateco: editingAteco.trim() || null,
+        settore_id: editingSettoreId ? Number(editingSettoreId) : null,
       })
       .eq('id', id)
 
@@ -122,11 +162,7 @@ export function AziendeListPage() {
       console.error('Errore durante l\'aggiornamento:', error)
     } else {
       setEditingId(null)
-      setEditingNome('')
-      setEditingCf('')
-      setEditingPIva('')
-      setEditingAteco('')
-      fetchAziende()
+      fetchDati()
     }
   }
 
@@ -141,7 +177,7 @@ export function AziendeListPage() {
     if (error) {
       console.error('Errore durante l\'eliminazione dell\'azienda:', error)
     } else {
-      fetchAziende()
+      fetchDati()
     }
   }
 
@@ -171,9 +207,11 @@ export function AziendeListPage() {
 
   return (
     <section className="stack">
+
+
       <header className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ flex: '1 1 250px' }}>
-          <h2>Aziende</h2>
+          <h2>Aziende {nomeSettoreCorrente ? `(${nomeSettoreCorrente})` : ''}</h2>
           <p className="muted">Elenco aziende registrate</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -218,7 +256,18 @@ export function AziendeListPage() {
               value={nuovoNome}
               onChange={(e) => setNuovoNome(e.target.value)}
               style={{ padding: '0.5rem', flex: 2, borderRadius: '4px', border: '1px solid #ccc' }}
+              required
             />
+            <select
+              value={nuovoSettoreId}
+              onChange={(e) => setNuovoSettoreId(e.target.value)}
+              style={{ padding: '0.5rem', flex: 1, borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="">Seleziona settore...</option>
+              {settoriDisponibili.map(s => (
+                <option key={s.id} value={s.id}>{s.nome}</option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder="C.F."
@@ -253,103 +302,117 @@ export function AziendeListPage() {
       ) : (
         <section className="card-list">
           <ul>
-            {aziendeFiltrate.map((azienda) => {
-              const haAlert = azienda.persone?.some((persona) =>
-                persona.certificati?.some((cert) => isCertificatoInScadenza(cert.data_scadenza))
-              )
+            {aziendeFiltrate.persone?.map ?? (
+              aziendeFiltrate.map((azienda) => {
+                const haAlert = azienda.persone?.some((persona) =>
+                  persona.certificati?.some((cert) => isCertificatoInScadenza(cert.data_scadenza))
+                )
 
-              return (
-                <li key={azienda.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid #eee' }}>
-                  {editingId === azienda.id ? (
-                    <div style={{ display: 'flex', gap: '0.5rem', flex: 1, marginRight: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        value={editingNome}
-                        onChange={(e) => setEditingNome(e.target.value)}
-                        placeholder="Nome"
-                        style={{ padding: '0.3rem', flex: '2 1 200px', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                      <input
-                        type="text"
-                        value={editingCf}
-                        onChange={(e) => setEditingCf(e.target.value)}
-                        placeholder="C.F."
-                        style={{ padding: '0.3rem', flex: '1 1 130px', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                      <input
-                        type="text"
-                        value={editingPIva}
-                        onChange={(e) => setEditingPIva(e.target.value)}
-                        placeholder="P. IVA"
-                        style={{ padding: '0.3rem', flex: '1 1 130px', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                      <input
-                        type="text"
-                        value={editingAteco}
-                        onChange={(e) => setEditingAteco(e.target.value)}
-                        placeholder="ATECO"
-                        style={{ padding: '0.3rem', flex: '1 1 100px', borderRadius: '4px', border: '1px solid #ccc' }}
-                      />
-                      
-                      <div style={{ display: 'flex', gap: '0.4rem', flexBasis: '100%', marginTop: '0.2rem' }}>
-                        <button 
-                          type="button" 
-                          className="btn btn-primary" 
-                          onClick={() => handleUpdateAzienda(azienda.id)}
+                return (
+                  <li key={azienda.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid #eee' }}>
+                    {editingId === azienda.id ? (
+                      <div style={{ display: 'flex', gap: '0.5rem', flex: 1, marginRight: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={editingNome}
+                          onChange={(e) => setEditingNome(e.target.value)}
+                          placeholder="Nome"
+                          style={{ padding: '0.3rem', flex: '2 1 180px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        />
+                        <select
+                          value={editingSettoreId}
+                          onChange={(e) => setEditingSettoreId(e.target.value)}
+                          style={{ padding: '0.3rem', flex: '1 1 130px', borderRadius: '4px', border: '1px solid #ccc' }}
                         >
-                          Salva
-                        </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-outline" 
-                          onClick={() => setEditingId(null)}
-                        >
-                          Annulla
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <Link to={paths.aziende.detail(azienda.id)} style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <strong style={{ color: '#0066cc' }}>{azienda.nome}</strong>
-                          {haAlert && (
-                            <span title="Questa azienda ha dipendenti con certificati in scadenza" style={{ fontSize: '1rem' }}>⚠️</span>
-                          )}
+                          <option value="">Nessun settore</option>
+                          {settoriDisponibili.map(s => (
+                            <option key={s.id} value={s.id}>{s.nome}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          value={editingCf}
+                          onChange={(e) => setEditingCf(e.target.value)}
+                          placeholder="C.F."
+                          style={{ padding: '0.3rem', flex: '1 1 110px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        />
+                        <input
+                          type="text"
+                          value={editingPIva}
+                          onChange={(e) => setEditingPIva(e.target.value)}
+                          placeholder="P. IVA"
+                          style={{ padding: '0.3rem', flex: '1 1 110px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        />
+                        <input
+                          type="text"
+                          value={editingAteco}
+                          onChange={(e) => setEditingAteco(e.target.value)}
+                          placeholder="ATECO"
+                          style={{ padding: '0.3rem', flex: '1 1 80px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        />
+                        
+                        <div style={{ display: 'flex', gap: '0.4rem', flexBasis: '100%', marginTop: '0.2rem' }}>
+                          <button 
+                            type="button" 
+                            className="btn btn-primary" 
+                            onClick={() => handleUpdateAzienda(azienda.id)}
+                          >
+                            Salva
+                          </button>
+                          <button 
+                            type="button" 
+                            className="btn btn-outline" 
+                            onClick={() => setEditingId(null)}
+                          >
+                            Annulla
+                          </button>
                         </div>
-                        <span className="muted" style={{ fontSize: '0.85rem' }}>
-                          {azienda.codice_fiscale && `CF: ${azienda.codice_fiscale}`}
-                          {azienda.p_iva && ` | P.IVA: ${azienda.p_iva}`}
-                          {azienda.ateco && ` | ATECO: ${azienda.ateco}`}
-                        </span>
-                      </Link>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button
-                          className="btn btn-outline btn-icon"
-                          onClick={() => {
-                            setEditingId(azienda.id)
-                            setEditingNome(azienda.nome)
-                            setEditingCf(azienda.codice_fiscale || '')
-                            setEditingPIva(azienda.p_iva || '')
-                            setEditingAteco(azienda.ateco || '')
-                          }}
-                          title="Modifica"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn btn-danger btn-icon"
-                          onClick={() => handleDeleteAzienda(azienda.id)}
-                          title="Elimina"
-                        >
-                          🗑️
-                        </button>
                       </div>
-                    </>
-                  )}
-                </li>
-              )
-            })}
+                    ) : (
+                      <>
+                        <Link to={paths.aziende.detail(azienda.id)} style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <strong style={{ color: '#0066cc' }}>{azienda.nome}</strong>
+                            {haAlert && (
+                              <span title="Questa azienda ha dipendenti con certificati in scadenza" style={{ fontSize: '1rem' }}>⚠️</span>
+                            )}
+                          </div>
+                          <span className="muted" style={{ fontSize: '0.85rem' }}>
+                            {azienda.settori?.nome && `Settore: ${azienda.settori.nome}`}
+                            {azienda.codice_fiscale && ` | CF: ${azienda.codice_fiscale}`}
+                            {azienda.p_iva && ` | P.IVA: ${azienda.p_iva}`}
+                            {azienda.ateco && ` | ATECO: ${azienda.ateco}`}
+                          </span>
+                        </Link>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button
+                            className="btn btn-outline btn-icon"
+                            onClick={() => {
+                              setEditingId(azienda.id)
+                              setEditingNome(azienda.nome)
+                              setEditingCf(azienda.codice_fiscale || '')
+                              setEditingPIva(azienda.p_iva || '')
+                              setEditingAteco(azienda.ateco || '')
+                              setEditingSettoreId(azienda.settore_id ? String(azienda.settore_id) : '')
+                            }}
+                            title="Modifica"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="btn btn-danger btn-icon"
+                            onClick={() => handleDeleteAzienda(azienda.id)}
+                            title="Elimina"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                )
+              })
+            )}
           </ul>
         </section>
       )}

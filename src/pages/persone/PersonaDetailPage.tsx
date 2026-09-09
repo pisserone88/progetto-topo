@@ -41,6 +41,13 @@ export function PersonaDetailPage() {
 
   const haCertificatiInScadenza = certificati.some((c) => isCertificatoInScadenza(c.data_scadenza ?? null))
 
+    // Funzione per convertire da AAAA-MM-GG a GG/MM/AAAA
+  const formattaData = (dataString?: string | null) => {
+    if (!dataString) return ''
+    const [anno, mese, giorno] = dataString.split('-')
+    if (!anno || !mese || !giorno) return dataString
+    return `${giorno}-${mese}-${anno}`
+  }
   const fetchCertificatiData = async () => {
     if (!personaId) return
     setLoading(true)
@@ -316,10 +323,10 @@ export function PersonaDetailPage() {
                           )}
                         </div>
                         <span className="muted" style={{ fontSize: '0.85rem' }}>
-                          {certificato.data_rilascio && `Rilascio: ${certificato.data_rilascio}`}
-                          {certificato.data_rilascio && certificato.data_scadenza && ' | '}
-                          {certificato.data_scadenza && `Scadenza: ${certificato.data_scadenza}`}
-                        </span>
+                        {certificato.data_rilascio && `Rilascio: ${formattaData(certificato.data_rilascio)}`}
+                        {certificato.data_rilascio && certificato.data_scadenza && ' | '}
+                        {certificato.data_scadenza && `Scadenza: ${formattaData(certificato.data_scadenza)}`}
+                      </span>
                       </div>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <button
