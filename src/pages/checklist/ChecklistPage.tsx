@@ -538,35 +538,33 @@ export function ChecklistPage() {
             </div>
           </div>
 
-          {/* BOTTONI SALVA, ESPORTA ED ELIMINA */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <button
-                type="submit"
-                disabled={saving}
-                className="btn btn-primary"
-                style={{ padding: '0.8rem 2rem', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                {saving ? 'Salvataggio in corso...' : 'Salva'}
-              </button>
+          {/* BOTTONI COMPatti (Salva, Esporta, Elimina vicini) */}
+          <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn btn-primary"
+              style={{ padding: '0.6rem 1.2rem', fontSize: '0.95rem', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              {saving ? 'Salvataggio...' : 'Salva'}
+            </button>
 
-              <button
-                type="button"
-                onClick={handleExportExcel}
-                style={{ 
-                  padding: '0.8rem 2rem', 
-                  fontSize: '1rem', 
-                  cursor: 'pointer', 
-                  fontWeight: 'bold', 
-                  background: '#16a34a', 
-                  color: '#fff', 
-                  border: 'none', 
-                  borderRadius: '6px' 
-                }}
-              >
-                  Esporta
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              style={{ 
+                padding: '0.6rem 1.2rem', 
+                fontSize: '0.95rem', 
+                cursor: 'pointer', 
+                fontWeight: 'bold', 
+                background: '#16a34a', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: '6px' 
+              }}
+            >
+                Esporta
+            </button>
 
             {checklistId && (
               <button
@@ -574,8 +572,8 @@ export function ChecklistPage() {
                 onClick={handleDelete}
                 disabled={deleting}
                 style={{ 
-                  padding: '0.8rem 2rem', 
-                  fontSize: '1rem', 
+                  padding: '0.6rem 1.2rem', 
+                  fontSize: '0.95rem', 
                   cursor: 'pointer', 
                   fontWeight: 'bold', 
                   background: '#dc2626', 
