@@ -431,41 +431,53 @@ export function ChecklistPage() {
             {macchinari.length === 0 ? (
               <p className="muted" style={{ fontStyle: 'italic' }}>Nessun macchinario censito per questa azienda.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 {macchinari.map((m, index) => (
-                  <div key={m.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: '#f9f9f9', padding: '0.6rem', borderRadius: '4px', border: '1px solid #ddd' }}>
-                    <span style={{ fontWeight: 'bold' }}>{index + 1}.</span>
-                    <input
-                      type="text"
-                      placeholder="Descrizione macchinario..."
-                      value={m.descrizione}
-                      onChange={(e) => aggiornaMacchinario(m.id, 'descrizione', e.target.value)}
-                      style={{ flex: 2, padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                    />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', background: '#f9f9f9', padding: '0.8rem', borderRadius: '4px', border: '1px solid #ddd' }}>
+                    
+                    {/* Prima riga: Numero, Descrizione e Pulsante Elimina */}
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold' }}>{index + 1}.</span>
                       <input
-                        type="checkbox"
-                        checked={m.marcaturaCee}
-                        onChange={(e) => aggiornaMacchinario(m.id, 'marcaturaCee', e.target.checked)}
+                        type="text"
+                        placeholder="Descrizione macchinario..."
+                        value={m.descrizione}
+                        onChange={(e) => aggiornaMacchinario(m.id, 'descrizione', e.target.value)}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
                       />
-                      Marcatura CEE
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="N°"
-                      value={m.numero}
-                      onChange={(e) => aggiornaMacchinario(m.id, 'numero', e.target.value)}
-                      style={{ width: '80px', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => rimuoviMacchinario(m.id)}
-                      className="btn btn-danger btn-icon"
-                      title="Elimina"
-                      style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      ✕
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => rimuoviMacchinario(m.id)}
+                        className="btn btn-danger btn-icon"
+                        title="Elimina"
+                        style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Seconda riga: Marcatura CEE e Campo Numero (andati a capo) */}
+                    <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', paddingLeft: '1.5rem', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={m.marcaturaCee}
+                          onChange={(e) => aggiornaMacchinario(m.id, 'marcaturaCee', e.target.checked)}
+                        />
+                        Marcatura CEE
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#555' }}>N°:</span>
+                        <input
+                          type="text"
+                          placeholder="Quantità / Numero"
+                          value={m.numero}
+                          onChange={(e) => aggiornaMacchinario(m.id, 'numero', e.target.value)}
+                          style={{ width: '120px', padding: '0.4rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                        />
+                      </div>
+                    </div>
+
                   </div>
                 ))}
               </div>
