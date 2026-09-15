@@ -19,4 +19,8 @@ export const paths = {
       },
     },
   },
+  checklist: {
+    list: '/checklist',
+    detail: (aziendaId: string) => `/checklist/${aziendaId}`, // <-- Aggiungi questa riga
+  },
 } as const

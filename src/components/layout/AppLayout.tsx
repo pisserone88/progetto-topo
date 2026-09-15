@@ -20,7 +20,7 @@ export function AppLayout({ title }: AppLayoutProps) {
       // Diventa attivo solo se siamo dentro /settori (ma NON nella root /)
       return location.pathname.startsWith('/settori')
     }
-    // Per tutte le altre rotte (es. /aziende)
+    // Per tutte le altre rotte (es. /aziende, /checklist)
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
   
@@ -59,6 +59,9 @@ export function AppLayout({ title }: AppLayoutProps) {
           </Link>
           <Link to={paths.aziende.list} className={linkClassName(paths.aziende.list)} onClick={handleLinkClick}>
             🏢 Tutte le Aziende
+          </Link>
+          <Link to={paths.checklist.list} className={linkClassName(paths.checklist.list)} onClick={handleLinkClick}>
+            📋 Checklist
           </Link>
         </nav>
 

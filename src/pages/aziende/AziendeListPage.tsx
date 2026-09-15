@@ -24,6 +24,7 @@ interface Azienda {
   codice_fiscale?: string | null
   p_iva?: string | null
   ateco?: string | null
+  dvr?: string | null
   settore_id?: number | null
   settori?: Settore | null
   persone?: PersonaConCertificati[]
@@ -35,6 +36,7 @@ export function AziendeListPage() {
   const [aziende, setAziende] = useState<Azienda[]>([])
   const [settoriDisponibili, setSettoriDisponibili] = useState<Settore[]>([])
   const [nomeSettoreCorrente, setNomeSettoreCorrente] = useState<string>('')
+  const [aziendeConChecklist, setAziendeConChecklist] = useState<Set<string>>(new Set())
   
   const [loading, setLoading] = useState(true)
   const [soloAlert, setSoloAlert] = useState(false)
@@ -45,6 +47,7 @@ export function AziendeListPage() {
   const [nuovoCf, setNuovoCf] = useState('')
   const [nuovoPIva, setNuovoPIva] = useState('')
   const [nuovoAteco, setNuovoAteco] = useState('')
+  const [nuovoDvr, setNuovoDvr] = useState('')
   const [nuovoSettoreId, setNuovoSettoreId] = useState<string>(settoreId || '')
 
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -52,6 +55,7 @@ export function AziendeListPage() {
   const [editingCf, setEditingCf] = useState('')
   const [editingPIva, setEditingPIva] = useState('')
   const [editingAteco, setEditingAteco] = useState('')
+  const [editingDvr, setEditingDvr] = useState('')
   const [editingSettoreId, setEditingSettoreId] = useState<string>('')
 
   const fetchDati = async () => {
@@ -67,6 +71,13 @@ export function AziendeListPage() {
       }
     }
 
+    // Recupera gli ID delle aziende che hanno una checklist salvata
+    const { data: checklistData } = await supabase.from('checklist').select('azienda_id')
+    if (checklistData) {
+      const ids = new Set(checklistData.map(c => String(c.azienda_id)))
+      setAziendeConChecklist(ids)
+    }
+
     // Costruisci la query delle aziende
     let query = supabase
       .from('aziende')
@@ -76,6 +87,7 @@ export function AziendeListPage() {
         codice_fiscale,
         p_iva,
         ateco,
+        dvr,
         settore_id,
         settori ( id, nome ),
         persone (
@@ -100,6 +112,7 @@ export function AziendeListPage() {
         codice_fiscale: item.codice_fiscale,
         p_iva: item.p_iva,
         ateco: item.ateco,
+        dvr: item.dvr,
         settore_id: item.settore_id,
         settori: item.settori,
         persone: item.persone || [],
@@ -128,6 +141,7 @@ export function AziendeListPage() {
           codice_fiscale: nuovoCf.trim() || null,
           p_iva: nuovoPIva.trim() || null,
           ateco: nuovoAteco.trim() || null,
+          dvr: nuovoDvr.trim() || null,
           settore_id: nuovoSettoreId ? Number(nuovoSettoreId) : (settoreId ? Number(settoreId) : null),
         },
       ])
@@ -139,6 +153,7 @@ export function AziendeListPage() {
       setNuovoCf('')
       setNuovoPIva('')
       setNuovoAteco('')
+      setNuovoDvr('')
       setMostraFormAggiungi(false)
       fetchDati()
     }
@@ -154,6 +169,7 @@ export function AziendeListPage() {
         codice_fiscale: editingCf.trim() || null,
         p_iva: editingPIva.trim() || null,
         ateco: editingAteco.trim() || null,
+        dvr: editingDvr.trim() || null,
         settore_id: editingSettoreId ? Number(editingSettoreId) : null,
       })
       .eq('id', id)
@@ -194,8 +210,9 @@ export function AziendeListPage() {
       const matchCf = azienda.codice_fiscale?.toLowerCase().includes(query) || false
       const matchPIva = azienda.p_iva?.toLowerCase().includes(query) || false
       const matchAteco = azienda.ateco?.toLowerCase().includes(query) || false
+      const matchDvr = azienda.dvr?.toLowerCase().includes(query) || false
 
-      if (!matchNome && !matchCf && !matchPIva && !matchAteco) return false
+      if (!matchNome && !matchCf && !matchPIva && !matchAteco && !matchDvr) return false
     }
 
     return true
@@ -237,7 +254,7 @@ export function AziendeListPage() {
       <div style={{ margin: '0.5rem 0' }}>
         <input
           type="text"
-          placeholder="Cerca azienda per nome, CF, P.IVA o ATECO..."
+          placeholder="Cerca azienda per nome, CF, P.IVA, ATECO o DVR..."
           value={ricercaTesto}
           onChange={(e) => setRicercaTesto(e.target.value)}
           style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
@@ -287,6 +304,13 @@ export function AziendeListPage() {
               onChange={(e) => setNuovoAteco(e.target.value)}
               style={{ padding: '0.5rem', flex: 1, borderRadius: '4px', border: '1px solid #ccc' }}
             />
+            <input
+              type="text"
+              placeholder="DVR"
+              value={nuovoDvr}
+              onChange={(e) => setNuovoDvr(e.target.value)}
+              style={{ padding: '0.5rem', flex: 1, borderRadius: '4px', border: '1px solid #ccc' }}
+            />
             <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Salva Azienda</button>
           </div>
         </form>
@@ -304,24 +328,25 @@ export function AziendeListPage() {
               const haAlert = azienda.persone?.some((persona) =>
                 persona.certificati?.some((cert) => isCertificatoInScadenza(cert.data_scadenza))
               )
+              const haChecklist = aziendeConChecklist.has(azienda.id)
 
               return (
                 <li key={azienda.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid #eee' }}>
                   {editingId === azienda.id ? (
-                    <div style={{ display: 'flex', gap: '0.5rem', flex: 1, marginRight: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', flex: 1, marginRight: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                       <input
                         type="text"
                         value={editingNome}
                         onChange={(e) => setEditingNome(e.target.value)}
                         placeholder="Nome"
-                        style={{ padding: '0.3rem', flex: '2 1 180px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        style={{ padding: '0.3rem', flex: '1 1 120px', borderRadius: '4px', border: '1px solid #ccc' }}
                       />
                       <select
                         value={editingSettoreId}
                         onChange={(e) => setEditingSettoreId(e.target.value)}
-                        style={{ padding: '0.3rem', flex: '1 1 130px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        style={{ padding: '0.3rem', flex: '1 1 100px', borderRadius: '4px', border: '1px solid #ccc' }}
                       >
-                        <option value="">Nessun settore</option>
+                        <option value="">Settore</option>
                         {settoriDisponibili.map(s => (
                           <option key={s.id} value={s.id}>{s.nome}</option>
                         ))}
@@ -331,24 +356,31 @@ export function AziendeListPage() {
                         value={editingCf}
                         onChange={(e) => setEditingCf(e.target.value)}
                         placeholder="C.F."
-                        style={{ padding: '0.3rem', flex: '1 1 110px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        style={{ padding: '0.3rem', flex: '1 1 90px', borderRadius: '4px', border: '1px solid #ccc' }}
                       />
                       <input
                         type="text"
                         value={editingPIva}
                         onChange={(e) => setEditingPIva(e.target.value)}
                         placeholder="P. IVA"
-                        style={{ padding: '0.3rem', flex: '1 1 110px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        style={{ padding: '0.3rem', flex: '1 1 90px', borderRadius: '4px', border: '1px solid #ccc' }}
                       />
                       <input
                         type="text"
                         value={editingAteco}
                         onChange={(e) => setEditingAteco(e.target.value)}
                         placeholder="ATECO"
-                        style={{ padding: '0.3rem', flex: '1 1 80px', borderRadius: '4px', border: '1px solid #ccc' }}
+                        style={{ padding: '0.3rem', flex: '1 1 65px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      />
+                      <input
+                        type="text"
+                        value={editingDvr}
+                        onChange={(e) => setEditingDvr(e.target.value)}
+                        placeholder="DVR"
+                        style={{ padding: '0.3rem', flex: '1 1 65px', borderRadius: '4px', border: '1px solid #ccc' }}
                       />
                       
-                      <div style={{ display: 'flex', gap: '0.4rem', flexBasis: '100%', marginTop: '0.2rem' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexBasis: '100%', marginTop: '0.4rem' }}>
                         <button 
                           type="button" 
                           className="btn btn-primary" 
@@ -379,9 +411,20 @@ export function AziendeListPage() {
                           {azienda.codice_fiscale && ` | CF: ${azienda.codice_fiscale}`}
                           {azienda.p_iva && ` | P.IVA: ${azienda.p_iva}`}
                           {azienda.ateco && ` | ATECO: ${azienda.ateco}`}
+                          {azienda.dvr && ` | DVR: ${azienda.dvr}`}
                         </span>
                       </Link>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      {haChecklist && (
+                          <Link
+                            to={paths.checklist.detail(azienda.id)}
+                            className="btn btn-outline btn-icon"
+                            title="Visualizza Checklist Salvata"
+                            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            📋
+                          </Link>
+                        )}
                         <button
                           className="btn btn-outline btn-icon"
                           onClick={() => {
@@ -390,6 +433,7 @@ export function AziendeListPage() {
                             setEditingCf(azienda.codice_fiscale || '')
                             setEditingPIva(azienda.p_iva || '')
                             setEditingAteco(azienda.ateco || '')
+                            setEditingDvr(azienda.dvr || '')
                             setEditingSettoreId(azienda.settore_id ? String(azienda.settore_id) : '')
                           }}
                           title="Modifica"

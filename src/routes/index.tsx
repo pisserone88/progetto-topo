@@ -1,12 +1,13 @@
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { DashboardPage } from '../pages/DashboardPage'
-import { SettoriListPage } from '../pages/settori/SettoriListPage' // <-- Importa la nuova pagina dei settori
+import { SettoriListPage } from '../pages/settori/SettoriListPage'
 import { AziendeListPage } from '../pages/aziende/AziendeListPage'
 import { AziendaDetailPage } from '../pages/aziende/AziendaDetailPage'
 import { CertificatoDetailPage } from '../pages/certificati/CertificatoDetailPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PersonaDetailPage } from '../pages/persone/PersonaDetailPage'
+import { ChecklistPage } from '../pages/checklist/ChecklistPage'
 import { paths } from './paths'
 
 export function AppRoutes() {
@@ -20,9 +21,9 @@ export function AppRoutes() {
         <Route index element={<DashboardPage />} />
       </Route>
 
-      {/* 2. ELENCO SETTORI (Nuova Home principale per i settori) */}
+      {/* 2. ELENCO SETTORI */}
       <Route
-        path="/settori"
+        path={paths.settori.list}
         element={<AppLayout title="Settori" />}
       >
         <Route index element={<SettoriListPage />} />
@@ -30,15 +31,15 @@ export function AppRoutes() {
 
       {/* 3. ELENCO AZIENDE FILTRATE PER SETTORE */}
       <Route
-        path="/settori/:settoreId/aziende"
+        path={paths.settori.detail(':settoreId')}
         element={<AppLayout title="Aziende per Settore" />}
       >
         <Route index element={<AziendeListPage />} />
       </Route>
 
-      {/* 4. ELENCO GENERALE AZIENDE (Tutte le aziende, senza filtro) */}
+      {/* 4. ELENCO GENERALE AZIENDE */}
       <Route
-        path="/aziende"
+        path={paths.aziende.list}
         element={<AppLayout title="Tutte le Aziende" />}
       >
         <Route index element={<AziendeListPage />} />
@@ -46,7 +47,7 @@ export function AppRoutes() {
 
       {/* 5. DETTAGLIO AZIENDA */}
       <Route
-        path="/aziende/:aziendaId"
+        path={paths.aziende.detail(':aziendaId')}
         element={<AppLayout title="Dettaglio azienda" />}
       >
         <Route index element={<AziendaDetailPage />} />
@@ -54,7 +55,7 @@ export function AppRoutes() {
 
       {/* 6. DETTAGLIO PERSONA */}
       <Route
-        path="/aziende/:aziendaId/persone/:personaId"
+        path={paths.aziende.persone.detail(':aziendaId', ':personaId')}
         element={<AppLayout title="Dettaglio persona" />}
       >
         <Route index element={<PersonaDetailPage />} />
@@ -62,10 +63,26 @@ export function AppRoutes() {
 
       {/* 7. DETTAGLIO CERTIFICATO */}
       <Route
-        path="/aziende/:aziendaId/persone/:personaId/certificati/:certificatoId"
+        path={paths.aziende.persone.certificati.detail(':aziendaId', ':personaId', ':certificatoId')}
         element={<AppLayout title="Dettaglio certificato" />}
       >
         <Route index element={<CertificatoDetailPage />} />
+      </Route>
+
+      {/* 8. CHECKLIST GENERALE */}
+      <Route
+        path={paths.checklist.list}
+        element={<AppLayout title="Checklist" />}
+      >
+        <Route index element={<ChecklistPage />} />
+      </Route>
+
+      {/* 9. CHECKLIST SPECIFICA AZIENDA */}
+      <Route
+        path={paths.checklist.detail(':aziendaId')}
+        element={<AppLayout title="Checklist Azienda" />}
+      >
+        <Route index element={<ChecklistPage />} />
       </Route>
 
       {/* Fallback per pagine non trovate */}
