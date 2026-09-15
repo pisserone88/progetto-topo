@@ -25,6 +25,7 @@ export function ChecklistPage() {
   const [checklistId, setChecklistId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Campi del form basati sulla tabella Supabase
   const [nDipendenti, setNDipendenti] = useState<number | ''>('')
@@ -226,6 +227,34 @@ export function ChecklistPage() {
       alert("Errore durante il salvataggio.")
     } else {
       alert("Checklist salvata con successo!")
+    }
+  }
+
+  // Eliminazione della checklist dal database
+  const handleDelete = async () => {
+    if (!checklistId) {
+      alert("Nessuna checklist salvata da eliminare per questa azienda.")
+      return
+    }
+
+    const conferma = window.confirm("Sei sicuro di voler eliminare definitivamente questa checklist dal database?")
+    if (!conferma) return
+
+    setDeleting(true)
+
+    const { error } = await supabase
+      .from('checklist')
+      .delete()
+      .eq('id', checklistId)
+
+    setDeleting(false)
+
+    if (error) {
+      console.error("Errore durante l'eliminazione:", error)
+      alert("Errore durante l'eliminazione della checklist.")
+    } else {
+      alert("Checklist eliminata con successo!")
+      resetForm(false) // Pulisce i campi ma mantiene l'azienda selezionata
     }
   }
 
@@ -509,33 +538,55 @@ export function ChecklistPage() {
             </div>
           </div>
 
-          {/* BOTTONI SALVA ED EXPORT */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button
-              type="submit"
-              disabled={saving}
-              className="btn btn-primary"
-              style={{ padding: '0.8rem 2rem', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-              {saving ? 'Salvataggio in corso...' : 'Salva'}
-            </button>
+          {/* BOTTONI SALVA, ESPORTA ED ELIMINA */}
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                type="submit"
+                disabled={saving}
+                className="btn btn-primary"
+                style={{ padding: '0.8rem 2rem', fontSize: '1rem', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {saving ? 'Salvataggio in corso...' : 'Salva'}
+              </button>
 
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              style={{ 
-                padding: '0.8rem 2rem', 
-                fontSize: '1rem', 
-                cursor: 'pointer', 
-                fontWeight: 'bold', 
-                background: '#16a34a', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: '6px' 
-              }}
-            >
-                Esporta
-            </button>
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                style={{ 
+                  padding: '0.8rem 2rem', 
+                  fontSize: '1rem', 
+                  cursor: 'pointer', 
+                  fontWeight: 'bold', 
+                  background: '#16a34a', 
+                  color: '#fff', 
+                  border: 'none', 
+                  borderRadius: '6px' 
+                }}
+              >
+                  Esporta
+              </button>
+            </div>
+
+            {checklistId && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ 
+                  padding: '0.8rem 2rem', 
+                  fontSize: '1rem', 
+                  cursor: 'pointer', 
+                  fontWeight: 'bold', 
+                  background: '#dc2626', 
+                  color: '#fff', 
+                  border: 'none', 
+                  borderRadius: '6px' 
+                }}
+              >
+                {deleting ? 'Eliminazione...' : 'Elimina'}
+              </button>
+            )}
           </div>
 
         </form>
